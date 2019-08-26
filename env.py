@@ -37,10 +37,6 @@ class env:
         else:
             order = shift.Order(orderType,self.symbol,self.remained_share)
         self.trader.submitOrder(order)
-        if self.remained_time > 0:
-            time.sleep(self.timeInterval)
-        else:
-            time.sleep(1)
         tmp_share = self.remained_sahre
         self.remained_share = self.total_share-abs(self.base_price-self.currentPos)
         self.currentPos = self._getCurrentPosition()
@@ -50,7 +46,10 @@ class env:
         if int(self._getCurrentPosition()*100)==self.total_share:
             done = True
         self.remained_time -= 1
-
+        if self.remained_time > 0:
+            time.sleep(self.timeInterval)
+        else:
+            time.sleep(1)
         next_obs = self.get_obs()
         self.record.append(next_obs)
         return next_obs,reward,done
