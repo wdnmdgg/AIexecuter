@@ -19,6 +19,7 @@ class env:
         self.remained_share = None
         self.currentPos = None
         self.remained_time = None
+        self.total_time = None
         self.objPrice = None
         self.record = []
     def set_objective(self, share, remained_time, objPrice):
@@ -27,6 +28,7 @@ class env:
         self.remained_share = abs(share)
         self.currentPos = self._getCurrentPosition()
         self.remained_time = remained_time
+        self.total_time = remained_time
         self.objPrice = objPrice
     def step(self,action):
         self.base_price = self.getClosePrice(action)
@@ -42,7 +44,7 @@ class env:
         self.currentPos = self._getCurrentPosition()
         exec_share = tmp_share - self.remained_share
         done = False
-        reward = exec_share * abs(self.getClosePrice(action)- self.objPrice) * 100 + self.commission
+        reward = (exec_share * abs(self.getClosePrice(action)- self.objPrice) * 100 + self.commission)*(self.remained_time/self.total_time)
         if int(self._getCurrentPosition()*100)==self.total_share:
             done = True
         self.remained_time -= 1
