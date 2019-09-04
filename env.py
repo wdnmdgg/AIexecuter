@@ -44,7 +44,7 @@ class env:
         self.currentPos = self._getCurrentPosition()
         exec_share = tmp_share - self.remained_share
         done = False
-        reward = (exec_share * abs(self.getClosePrice(action)- self.objPrice) * 100 )*np.sqrt(1-self.remained_time/self.total_time)+ self.commission
+        reward = (exec_share * abs(self.getClosePrice(action)- self.objPrice) * 100 )+ self.commission
         if int(self._getCurrentPosition()*100)==self.total_share:
             done = True
         self.remained_time -= 1
