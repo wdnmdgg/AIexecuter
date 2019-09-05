@@ -44,6 +44,7 @@ class env:
         self.currentPos = self._getCurrentPosition()
         exec_share = tmp_share - self.remained_share
         done = False
+        self.trader.getOder()
         reward = (exec_share * abs(self.getClosePrice(action)- self.objPrice) * 100 )+ self.commission
         if int(self._getCurrentPosition()*100)==self.total_share:
             done = True
@@ -61,7 +62,8 @@ class env:
     def _getCurrentPosition(self):
         return int(self.trader.getPortfolioItem(self.symbol).getShares() / 100)
     def get_obs(self):
-        return np.asarray([self.remained_time,self.remained_share,self.base_price])
+        orderbook = self.trader.getOrderBookWithDestination(self.symbol,self.isBuy)
+        return np.asarray([self.remained_time,self.remained_share,orderbook])
     def get_record(self):
         return self.record
 
