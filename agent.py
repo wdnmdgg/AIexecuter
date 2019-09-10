@@ -1,6 +1,7 @@
 import numpy as np
 import tensorflow as tf
 import rnn
+from env import env
 import output_functions as of
 import tensorflow.keras.activations as act
 import shift
@@ -10,7 +11,9 @@ print(tf.__version__)
 class Agent:
 
     def __init__(self,
+                 env,
                  ):
+        self.env = env
 
 sess = tf.Session()
 
