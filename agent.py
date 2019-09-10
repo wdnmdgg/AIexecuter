@@ -4,9 +4,13 @@ import rnn
 import output_functions as of
 import tensorflow.keras.activations as act
 import shift
-
 print(tf.__version__)
 
+
+class Agent:
+
+    def __init__(self,
+                 ):
 
 sess = tf.Session()
 
