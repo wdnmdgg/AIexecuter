@@ -1,16 +1,26 @@
 import shift
 import numpy as np
 import time
+
+
 class env:
+
     def __init__(self,
                  trader,
-                 t,
-                 nTimeStep,
+                 time_interval,
+                 time_steps,
                  symbol,
                  commission):
-        self.timeInterval = t
+        """
+        :param trader:
+        :param time_interval:
+        :param time_steps:
+        :param symbol:
+        :param commission:
+        """
+        self.timeInterval = time_interval
         self.symbol = symbol
-        self.nTimeStep = nTimeStep
+        self.nTimeStep = time_steps
         self.trader = trader
         self.commission = commission
 
@@ -22,6 +32,7 @@ class env:
         self.total_time = None
         self.objPrice = None
         self.record = []
+
     def set_objective(self, share, remained_time, objPrice):
         self.isBuy = True if share > 0 else False
         self.total_share = abs(share)
@@ -30,7 +41,8 @@ class env:
         self.remained_time = remained_time
         self.total_time = remained_time
         self.objPrice = objPrice
-    def step(self,action):
+
+    def step(self, action):
         self.base_price = self.getClosePrice(action)
         orderType = shift.Order.MARKET_BUY if self.isBuy else shift.Order.MARKET_SELL
         #signBuy = 1 if self.isBuy else -1
@@ -39,13 +51,12 @@ class env:
         else:
             order = shift.Order(orderType,self.symbol,self.remained_share)
         self.trader.submitOrder(order)
-        tmp_share = self.remained_sahre
+        tmp_share = self.remained_share
         self.remained_share = self.total_share-abs(self.base_price-self.currentPos)
         self.currentPos = self._getCurrentPosition()
         exec_share = tmp_share - self.remained_share
         done = False
-        self.trader.getOder()
-        reward = (exec_share * abs(self.getClosePrice(action)- self.objPrice) * 100 )+ self.commission
+        reward = (exec_share * abs(self.getClosePrice(action)- self.objPrice) * 100 )*np.sqrt(1-self.remained_time/self.total_time)+ self.commission
         if int(self._getCurrentPosition()*100)==self.total_share:
             done = True
         self.remained_time -= 1
@@ -59,11 +70,13 @@ class env:
 
     def getClosePrice(self,share):
         return self.trader.getClosePrice(self.symbol,self.isBuy,abs(share))
+
     def _getCurrentPosition(self):
         return int(self.trader.getPortfolioItem(self.symbol).getShares() / 100)
+
     def get_obs(self):
-        orderbook = self.trader.getOrderBookWithDestination(self.symbol,self.isBuy)
-        return np.asarray([self.remained_time,self.remained_share,orderbook])
+        return np.asarray([self.remained_time,self.remained_share,self.base_price])
+
     def get_record(self):
         return self.record
 
