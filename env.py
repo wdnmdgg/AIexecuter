@@ -1,82 +1,94 @@
 import shift
-import numpy as np
+import collections
 import time
 
 
-class env:
+class Env:
 
     def __init__(self,
                  trader,
-                 time_interval,
-                 time_steps,
                  symbol,
                  commission):
         """
         :param trader:
-        :param time_interval:
-        :param time_steps:
         :param symbol:
         :param commission:
         """
-        self.timeInterval = time_interval
+
         self.symbol = symbol
-        self.nTimeStep = time_steps
         self.trader = trader
         self.commission = commission
 
+        self.timeInterval = None
+        self.nTimeStep = None
         self.isBuy = None
         self.total_share = None
         self.remained_share = None
         self.currentPos = None
-        self.remained_time = None
-        self.total_time = None
+        self.remained_steps = None
         self.objPrice = None
-        self.record = []
+        self.base_price = None
+        self.record = None
 
-    def set_objective(self, share, remained_time, objPrice):
+    def set_objective(self, share, time_total,time_steps, objPrice,feature_key):
+        self.timeInterval = time_total / time_steps
+        self.nTimeStep = time_steps
         self.isBuy = True if share > 0 else False
         self.total_share = abs(share)
         self.remained_share = abs(share)
-        self.currentPos = self._getCurrentPosition()
-        self.remained_time = remained_time
-        self.total_time = remained_time
+        self.currentPos = self.getCurrentPosition()
+        self.remained_steps = time_steps
         self.objPrice = objPrice
+        self.record = collections.defaultdict(list)
 
     def step(self, action):# action is shares we want to execute
-        self.base_price = self.getClosePrice(action)
+        #self.base_price = self.getClosePrice(action)
         orderType = shift.Order.MARKET_BUY if self.isBuy else shift.Order.MARKET_SELL
         #signBuy = 1 if self.isBuy else -1
-        if self.remained_time>0:
+        if self.remained_steps>0:
             order = shift.Order(orderType,self.symbol,action)
         else:
             order = shift.Order(orderType,self.symbol,self.remained_share)
         self.trader.submitOrder(order)
-        tmp_share = self.remained_share
-        self.remained_share = self.total_share-abs(self.base_price-self.currentPos)
-        self.currentPos = self._getCurrentPosition()
-        exec_share = tmp_share - self.remained_share
-        done = False
-        reward = (exec_share * abs(self.getClosePrice(action)- self.objPrice) * 100 )+ self.commission
-        if int(self._getCurrentPosition()*100)==self.total_share:
-            done = True
-        self.remained_time -= 1
-        if self.remained_time > 0:
+        """rest for a period of time"""
+        if self.remained_steps > 0:
             time.sleep(self.timeInterval)
         else:
             time.sleep(1)
+
+        tmp_share = self.remained_share
+        self.currentPos = self.getCurrentPosition()
+        self.remained_share = self.total_share-abs(self.currentPos)
+        self.remained_steps -= 1
+
+        exec_share = tmp_share - self.remained_share
+        if (int(self.getCurrentPosition()*100)==self.total_share) or self.remained_steps<0:
+            done = True
+        else:
+            done = False
+
+        if self.isBuy:
+            reward = (exec_share * (self.getClosePrice(action) - self.objPrice)) + self.commission
+        else:
+            reward = (exec_share * (-self.getClosePrice(action) + self.objPrice)) + self.commission
+
         next_obs = self.get_obs()
-        self.record.append(next_obs)
-        return next_obs,reward,done
+        next_obs['reward'] = reward
+        next_obs['isdone'] = done
+        self.add_features(self.record,next_obs,5)
+        """reward, remained_time, remained_share, order_book, isdone"""
+        return self.record
 
     def getClosePrice(self,share):
         return self.trader.getClosePrice(self.symbol,self.isBuy,abs(share))
 
-    def _getCurrentPosition(self):
-        return int(self.trader.getPortfolioItem(self.symbol).getShares() / 100)
+    def getCurrentPosition(self):# with sign
+        return self.trader.getPortfolioItem(self.symbol).getShares()
 
     def get_obs(self):
         allcloseprice = self.getAllClosePrice(self.isBuy,5)
-        return [self.remained_time,self.remained_share,allcloseprice]
+        res = {'remained_time':self.remained_steps,'remained_shares':self.remained_share,'order_book':allcloseprice}
+        return res
 
     def get_record(self):
         return self.record
@@ -112,6 +124,15 @@ class env:
             share_sum += sum([i[1] for i in queue])
             res.append(price_sum / share_sum)
         return res
+
+    def add_features(self,state_dict,features,limit):
+        """features need to fit the key of the state_dictionary"""
+        for f in features:
+            state_dict[f].append(features[f])
+            if len(state_dict[f])==limit:
+                state_dict[f]=state_dict[f][1:]
+
+
 
 
 
