@@ -89,11 +89,12 @@ class env:
         self.orderbook = self.trader.getOrderBookWithDestination(self.symbol, arg)
         share_sum = 0
         price_sum = 0
+        sizesum = 0
         queue = []
         res = []
         for order in self.orderbook:
             queue.append((order.price,order.size))
-            sizesum = int(sum([i[1] for i in queue]))
+            sizesum += order.size
             while (sizesum >= unit) and queue:
                 init = (queue[-1][1],int(sizesum-unit))
                 queue[-1][1] -= init[1]
@@ -102,12 +103,12 @@ class env:
                 res.append(price_sum / share_sum)
                 if init[1]>0:
                     queue=[init]
-                    sizesum = queue[0][1]
+                    sizesum = init[1]
                 else:
                     queue = []
         if queue:
-            price_sum+=queue[0][0]*queue[0][1]
-            share_sum += queue[0][1]
+            price_sum+=sum([i[1]*i[0] for i in queue])
+            share_sum += sum([i[1] for i in queue])
             res.append(price_sum / share_sum)
         return res
 
