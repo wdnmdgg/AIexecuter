@@ -106,6 +106,7 @@ class env:
                     sizesum = init[1]
                 else:
                     queue = []
+                    sizesum = 0
         if queue:
             price_sum+=sum([i[1]*i[0] for i in queue])
             share_sum += sum([i[1] for i in queue])
