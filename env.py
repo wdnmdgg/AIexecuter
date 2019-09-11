@@ -3,7 +3,7 @@ import numpy as np
 import time
 
 
-class env:
+class Env:
 
     def __init__(self,
                  trader,
