@@ -42,7 +42,7 @@ class env:
         self.total_time = remained_time
         self.objPrice = objPrice
 
-    def step(self, action):
+    def step(self, action):# action is shares we want to execute
         self.base_price = self.getClosePrice(action)
         orderType = shift.Order.MARKET_BUY if self.isBuy else shift.Order.MARKET_SELL
         #signBuy = 1 if self.isBuy else -1
@@ -56,7 +56,7 @@ class env:
         self.currentPos = self._getCurrentPosition()
         exec_share = tmp_share - self.remained_share
         done = False
-        reward = (exec_share * abs(self.getClosePrice(action)- self.objPrice) * 100 )*np.sqrt(1-self.remained_time/self.total_time)+ self.commission
+        reward = (exec_share * abs(self.getClosePrice(action)- self.objPrice) * 100 )+ self.commission
         if int(self._getCurrentPosition()*100)==self.total_share:
             done = True
         self.remained_time -= 1
@@ -75,12 +75,41 @@ class env:
         return int(self.trader.getPortfolioItem(self.symbol).getShares() / 100)
 
     def get_obs(self):
-        return np.asarray([self.remained_time,self.remained_share,self.base_price])
+        allcloseprice = self.getAllClosePrice(self.isBuy,5)
+        return [self.remained_time,self.remained_share,allcloseprice]
 
     def get_record(self):
         return self.record
 
-
+    def getAllClosePrice(self,order_type,unit):
+        if order_type:
+            arg = shift.OrderBookType.GLOBAL_BID
+        else:
+            arg = shift.OrderBookType.GLOBAL_ASK
+        self.orderbook = self.trader.getOrderBookWithDestination(self.symbol, arg)
+        share_sum = 0
+        price_sum = 0
+        queue = []
+        res = []
+        for order in self.orderbook:
+            queue.append((order.price,order.size))
+            sizesum = int(sum([i[1] for i in queue]))
+            while (sizesum >= unit) and queue:
+                init = (queue[-1][1],int(sizesum-unit))
+                queue[-1][1] -= init[1]
+                price_sum += sum([j[1]*j[0] for j in queue])
+                share_sum += unit
+                res.append(price_sum / share_sum)
+                if init[1]>0:
+                    queue=[init]
+                    sizesum = queue[0][1]
+                else:
+                    queue = []
+        if queue:
+            price_sum+=queue[0][0]*queue[0][1]
+            share_sum += queue[0][1]
+            res.append(price_sum / share_sum)
+        return res
 
 
 
