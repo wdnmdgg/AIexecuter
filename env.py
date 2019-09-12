@@ -94,10 +94,10 @@ class Env:
         return self.record
 
     def getAllClosePrice(self,order_type,unit):
-        if order_type:
-            arg = shift.OrderBookType.GLOBAL_BID
-        else:
+        if order_type == shift.Order.Type.MARKET_BUY:
             arg = shift.OrderBookType.GLOBAL_ASK
+        else:
+            arg = shift.OrderBookType.GLOBAL_BID
         self.orderbook = self.trader.getOrderBookWithDestination(self.symbol, arg)
         share_sum = 0
         price_sum = 0
