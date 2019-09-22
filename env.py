@@ -132,6 +132,24 @@ class Env:
             if len(state_dict[f])==limit:
                 state_dict[f]=state_dict[f][1:]
 
+    def getClosePriceAll(self, order_type, volumns):
+        if order_type == shift.Order.Type.MARKET_BUY:
+            arg = shift.OrderBookType.GLOBAL_ASK
+        else:
+            arg = shift.OrderBookType.GLOBAL_BID
+        self.orderbook = self.trader.getOrderBookWithDestination(self.symbol, arg)
+        share_sum = 0
+        price_sum = 0
+        res = []
+        for order in self.orderbook:
+            for i in range(1,order.size+1):
+                share_sum+=1
+                price_sum+=order.price
+                res.append(price_sum/share_sum)
+                if share_sum>volumns:
+                    return res
+        return res
+
 
 
 
