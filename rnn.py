@@ -1,9 +1,11 @@
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 from tensorflow.python.keras.layers import RNN
 import output_functions as of
 import tensorflow.keras.activations as act
 from tensorflow import keras
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 print(tf.__version__)
 
 
