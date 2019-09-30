@@ -30,7 +30,7 @@ class Env:
         self.base_price = None
         self.record = None
 
-    def set_objective(self, share, time_total,time_steps, objPrice,feature_key):
+    def set_objective(self, share, time_total, time_steps, objPrice, feature_key):
         self.timeInterval = time_total / time_steps
         self.nTimeStep = time_steps
         self.isBuy = True if share > 0 else False
@@ -41,14 +41,14 @@ class Env:
         self.objPrice = objPrice
         self.record = collections.defaultdict(list)
 
-    def step(self, action):# action is shares we want to execute
-        #self.base_price = self.getClosePrice(action)
+    def step(self, action):     # action is shares we want to execute
+        # self.base_price = self.getClosePrice(action)
         orderType = shift.Order.MARKET_BUY if self.isBuy else shift.Order.MARKET_SELL
-        #signBuy = 1 if self.isBuy else -1
-        if self.remained_steps>0:
-            order = shift.Order(orderType,self.symbol,action)
+        # signBuy = 1 if self.isBuy else -1
+        if self.remained_steps > 0:
+            order = shift.Order(orderType, self.symbol, action)
         else:
-            order = shift.Order(orderType,self.symbol,self.remained_share)
+            order = shift.Order(orderType, self.symbol, self.remained_share)
         self.trader.submitOrder(order)
         """rest for a period of time"""
         if self.remained_steps > 0:
@@ -62,7 +62,7 @@ class Env:
         self.remained_steps -= 1
 
         exec_share = tmp_share - self.remained_share
-        if (int(self.getCurrentPosition()*100)==self.total_share) or self.remained_steps<0:
+        if (int(self.getCurrentPosition() * 100) == self.total_share) or self.remained_steps < 0:
             done = True
         else:
             done = False
@@ -75,25 +75,25 @@ class Env:
         next_obs = self.get_obs()
         next_obs['reward'] = reward
         next_obs['isdone'] = done
-        self.add_features(self.record,next_obs,5)
+        self.add_features(self.record, next_obs, 5)
         """reward, remained_time, remained_share, order_book, isdone"""
         return self.record
 
-    def getClosePrice(self,share):
-        return self.trader.getClosePrice(self.symbol,self.isBuy,abs(share))
+    def getClosePrice(self, share):
+        return self.trader.getClosePrice(self.symbol, self.isBuy, abs(share))
 
-    def getCurrentPosition(self):# with sign
+    def getCurrentPosition(self):   # with sign
         return self.trader.getPortfolioItem(self.symbol).getShares()
 
     def get_obs(self):
-        allcloseprice = self.getAllClosePrice(self.isBuy,5)
-        res = {'remained_time':self.remained_steps,'remained_shares':self.remained_share,'order_book':allcloseprice}
+        allcloseprice = self.getAllClosePrice(self.isBuy, 5)
+        res = {'remained_time': self.remained_steps, 'remained_shares': self.remained_share, 'order_book':allcloseprice}
         return res
 
     def get_record(self):
         return self.record
 
-    def getAllClosePrice(self,order_type,unit):
+    def getAllClosePrice(self, order_type, unit):
         if order_type == shift.Order.Type.MARKET_BUY:
             arg = shift.OrderBookType.GLOBAL_ASK
         else:
@@ -113,8 +113,8 @@ class Env:
                 price_sum += sum([j[1]*j[0] for j in queue])
                 share_sum += unit
                 res.append(price_sum / share_sum)
-                if init[1]>0:
-                    queue=[init]
+                if init[1] > 0:
+                    queue = [init]
                     sizesum = init[1]
                 else:
                     queue = []
@@ -125,12 +125,12 @@ class Env:
             res.append(price_sum / share_sum)
         return res
 
-    def add_features(self,state_dict,features,limit):
+    def add_features(self, state_dict, features, limit):
         """features need to fit the key of the state_dictionary"""
         for f in features:
             state_dict[f].append(features[f])
-            if len(state_dict[f])==limit:
-                state_dict[f]=state_dict[f][1:]
+            if len(state_dict[f]) == limit:
+                state_dict[f] = state_dict[f][1:]
 
     def getClosePriceAll(self, order_type, volumns):
         if order_type == shift.Order.Type.MARKET_BUY:

@@ -16,7 +16,6 @@ class LSTMAgent:
                  batch_size,
                  Q_function,
                  optimizer,
-                 task_info,
                  GAMMA,
                  EPSILON,
                  learning_rate=0.001):
