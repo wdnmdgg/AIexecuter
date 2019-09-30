@@ -108,7 +108,7 @@ class Env:
             queue.append((order.price,order.size))
             sizesum += order.size
             while (sizesum >= unit) and queue:
-                init = (queue[-1][1],int(sizesum-unit))
+                init = (queue[-1][1], int(sizesum-unit))
                 queue[-1][1] -= init[1]
                 price_sum += sum([j[1]*j[0] for j in queue])
                 share_sum += unit
@@ -143,10 +143,10 @@ class Env:
         res = []
         for order in self.orderbook:
             for i in range(1,order.size+1):
-                share_sum+=1
-                price_sum+=order.price
+                share_sum += 1
+                price_sum += order.price
                 res.append(price_sum/share_sum)
-                if share_sum>volumns:
+                if share_sum > volumns:
                     return res
         return res
 

@@ -201,7 +201,6 @@ agent = LSTMAgent(sess_=sess,
                   batch_size=3,
                   Q_function=Qf.ann,
                   optimizer=tf.train.AdamOptimizer,
-                  task_info=None,
                   GAMMA=0.95,
                   EPSILON=0.1,
                   learning_rate=0.001)
