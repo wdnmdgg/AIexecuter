@@ -63,6 +63,7 @@ class Env:
         self.thread_alive = None
         self.ordertable = CirList(length=10)
         self.executedtable = CirList(length=10)
+        self.mutex = Lock()
 
 
     def _link(self):
@@ -159,7 +160,7 @@ class Env:
         return self.trader.get_portfolio_item(self.symbol).get_shares()     # self.trader.getPortfolioItem(self.symbol).getShares()
 
     def get_obs(self):
-        allcloseprice = self.getClosePriceAll(self.isBuy,99)########need modification!!!!!!!#########
+        allcloseprice = self.getClosePriceAll(99)########need modification!!!!!!!#########
         allcloseprice = np.asarray(allcloseprice)/self.objPrice
         rs_rate = self.remained_share/self.total_share
         rt_rate = self.remained_steps/self.nTimeStep
@@ -217,7 +218,7 @@ class Env:
 
     def getClosePriceAll(self, volumns:"maximum amount of close prices")->list:
         self.mutex.acquire()
-        tabData = self.table.getData()
+        tabData = self.ordertable.getData()
         self.mutex.release()
         share_sum = 0
         price_sum = 0
