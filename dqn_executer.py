@@ -11,8 +11,17 @@ import time
 GAMMA = 0.95
 EPSILON = 0.1
 EPISODES = 1000
-trader = shift.Trader("username")
-symbol = None
+
+trader = shift.Trader("democlient")
+try:
+    trader.connect("initiator.cfg", "password")
+    trader.sub_all_order_book()
+except shift.IncorrectPasswordError as e:
+    print(e)
+except shift.ConnectionTimeoutError as e:
+    print(e)
+
+symbol = "AAPL"
 commission = 0
 sess = tf.Session()
 execute_time = 3600     # total execution time (seconds)

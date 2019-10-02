@@ -178,32 +178,32 @@ class LSTMAgent:
     #     self.episode_hist['act'].append(act)
 
 
-sess = tf.Session()
-obs = np.array([[1.2, 1.19, 1.17, 1.15, 1.1, 1.09],
-                [1.23, 1.22, 1.2, 1.17, 1.13, 1.11],
-                [1.1, 1.08, 1.02, 0.99, 0.97, 0.93]])
-act = np.array([[0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
-                [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0]])
-rwd = np.array([[1],
-                [0.8],
-                [0]])
-obs_plus1 = np.array([[1.3, 1.21, 1.11, 1.03, 0.93, 0.83],
-                      [1.2, 1.11, 1.01, 1.0, 0.99, 0.92],
-                      [0.92, 0.91, 0.9, 0.83, 0.81, 0.8]])
-terminal = np.array([[0],
-                     [0],
-                     [1]])
-
-agent = LSTMAgent(sess_=sess,
-                  observations_dim=6,
-                  action_space=11,
-                  batch_size=3,
-                  Q_function=Qf.ann,
-                  optimizer=tf.train.AdamOptimizer,
-                  GAMMA=0.95,
-                  EPSILON=0.1,
-                  learning_rate=0.001)
-for i in range(20):
-    agent.train(obs, act, rwd, obs_plus1, terminal)
-    print(agent.get_action(obs[0]))
+# sess = tf.Session()
+# obs = np.array([[1.2, 1.19, 1.17, 1.15, 1.1, 1.09],
+#                 [1.23, 1.22, 1.2, 1.17, 1.13, 1.11],
+#                 [1.1, 1.08, 1.02, 0.99, 0.97, 0.93]])
+# act = np.array([[0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+#                 [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+#                 [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0]])
+# rwd = np.array([[1],
+#                 [0.8],
+#                 [0]])
+# obs_plus1 = np.array([[1.3, 1.21, 1.11, 1.03, 0.93, 0.83],
+#                       [1.2, 1.11, 1.01, 1.0, 0.99, 0.92],
+#                       [0.92, 0.91, 0.9, 0.83, 0.81, 0.8]])
+# terminal = np.array([[0],
+#                      [0],
+#                      [1]])
+#
+# agent = LSTMAgent(sess_=sess,
+#                   observations_dim=6,
+#                   action_space=11,
+#                   batch_size=3,
+#                   Q_function=Qf.ann,
+#                   optimizer=tf.train.AdamOptimizer,
+#                   GAMMA=0.95,
+#                   EPSILON=0.1,
+#                   learning_rate=0.001)
+# for i in range(20):
+#     agent.train(obs, act, rwd, obs_plus1, terminal)
+#     print(agent.get_action(obs[0]))
