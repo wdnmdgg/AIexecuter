@@ -47,7 +47,7 @@ class Env:
         self.symbol = symbol
         self.trader = trader
         self.commission = commission
-        self.action_space = action_space
+        self.action_space = int(action_space)
         self.action_level = np.linspace(0,1,self.action_space)
 
         self.timeInterval = None
@@ -115,7 +115,7 @@ class Env:
         orderType = shift.Order.MARKET_BUY if self.isBuy else shift.Order.MARKET_SELL
         #signBuy = 1 if self.isBuy else -1
         if self.remained_steps>0:
-            shares_to_be_executed = np.floor(self.action_level[action]*self.remained_share/100)
+            shares_to_be_executed = np.floor(self.action_level[int(action)]*self.remained_share/100)
             self.order = shift.Order(orderType,self.symbol,shares_to_be_executed) # action should be size (1 size = 100 shares)
         else:
             self.order = shift.Order(orderType,self.symbol,self.remained_share)

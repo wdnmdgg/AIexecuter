@@ -13,12 +13,14 @@ EPSILON = 0.1
 EPISODES = 1000
 trader = shift.Trader("username")
 symbol = None
-commission = None
+commission = 0
 sess = tf.Session()
-execute_time = 3600
-exe_times = 120
+execute_time = 3600 #total execution time (seconds)
+exe_times = 120 #steps
 exe_interval = execute_time / exe_times
 action_space = 11
+exe_shares = 100*10 #shares
+exe_price = 100  #dollar
 
 
 def main():
@@ -40,7 +42,10 @@ def main():
 
     for i in range(EPISODES):
         # Deal with the initialization for each episode
-
+        env.set_objective(share=exe_shares,
+                          time_total=execute_time,
+                          time_steps=exe_times,
+                          objPrice=exe_price)
         ob = env.reset()
         act = agent.get_action(ob['states'])
         ob = env.step(act)
