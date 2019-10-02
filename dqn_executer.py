@@ -45,7 +45,8 @@ def main():
         env.set_objective(share=exe_shares,
                           time_total=execute_time,
                           time_steps=exe_times,
-                          objPrice=exe_price)
+                          objPrice=exe_price,
+                          close_price_volumn=99)
         ob = env.reset()
         act = agent.get_action(ob['states'])
         ob = env.step(act)

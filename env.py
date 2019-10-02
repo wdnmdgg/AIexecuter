@@ -62,6 +62,7 @@ class Env:
         self.record = None
         self.time_total = None
         self.order = None
+        self.close_price_volumn = None
 
         self.dataThread = Thread(target=self._link)
         self.thread_alive = None
@@ -94,7 +95,7 @@ class Env:
     def kill_thread(self):
         self.thread_alive = False
 
-    def set_objective(self, share, time_total,time_steps, objPrice):
+    def set_objective(self, share, time_total,time_steps, objPrice,close_price_volumn):
         self.isBuy = True if share > 0 else False
         self.total_share = abs(share)
         self.remained_share = abs(share)
@@ -105,6 +106,7 @@ class Env:
 
         self.currentPos = self.getCurrentPosition()
         self.remained_steps = time_steps
+        self.close_price_volumn = close_price_volumn
 
         self.record = collections.defaultdict(list)
         self.thread_alive = True
@@ -144,7 +146,7 @@ class Env:
         else:
             reward = (exec_share * (-close_price + self.objPrice)) + self.commission
 
-        next_obs = self.get_obs()
+        next_obs = self.get_obs(self.close_price_volumn)
         next_obs['reward'] = reward
         next_obs['isdone'] = done
         #self.add_features(self.record,next_obs,5)
@@ -164,8 +166,8 @@ class Env:
     def getCurrentPosition(self):# with sign
         return self.trader.get_portfolio_item(self.symbol).get_shares()     # self.trader.getPortfolioItem(self.symbol).getShares()
 
-    def get_obs(self):
-        allcloseprice = self.getClosePriceAll(99)########need modification!!!!!!!#########
+    def get_obs(self,close_price_volumn):
+        allcloseprice = self.getClosePriceAll(close_price_volumn)########need modification!!!!!!!#########
         allcloseprice = np.asarray(allcloseprice)/self.objPrice
         rs_rate = self.remained_share/self.total_share
         rt_rate = self.remained_steps/self.nTimeStep
@@ -177,9 +179,9 @@ class Env:
         return self.record
 
     def reset(self):
-        next_obs = self.get_obs()
+        next_obs = self.get_obs(self.close_price_volumn)
         next_obs['reward'] = np.nan
-        next_obs['isdone'] = 1
+        next_obs['isdone'] = 0
         return next_obs.copy()
 
     # def getAllClosePrice(self,order_type,unit):
