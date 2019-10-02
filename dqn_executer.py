@@ -18,15 +18,17 @@ sess = tf.Session()
 execute_time = 3600
 exe_times = 120
 exe_interval = execute_time / exe_times
+action_space = 11
 
 
 def main():
     env = Env(trader=trader,
               symbol=symbol,
-              commission=commission)
+              commission=commission,
+              action_space=action_space)
     agent = LSTMAgent(sess_=sess,
                       observations_dim=101,
-                      action_space=11,
+                      action_space=action_space,
                       batch_size=5,
                       Q_function=Qf.ann,
                       optimizer=tf.train.AdamOptimizer,
@@ -38,19 +40,23 @@ def main():
 
     for i in range(EPISODES):
         # Deal with the initialization for each episode
-        for j in range(exe_times):
-            time.sleep(exe_interval)
-# ---------------------------------------------
-            if j == 0:
-                env.get_obs()
-            else:
-                env.step()
-            agent.get_action()
-            agent.save_buffer()
-            pool.add_sample()
-        pool.random_batch()
-        agent.train()
-# ---------------------------------------------
+
+        ob = env.reset()
+        act = agent.get_action(ob['states'])
+        ob = env.step(act)
+        for j in range(1, exe_times):
+            agent.save_buffer([ob['reward'], ob['states'], ob['isdone']],
+                              False)
+            pool.add_sample(agent.tmp_buffer[0],
+                            agent.tmp_buffer[1],
+                            agent.tmp_buffer[2],
+                            agent.tmp_buffer[3],
+                            agent.tmp_buffer[4])
+            act = agent.get_action(ob['states'])
+            ob = env.step(act)
+        s0, acts, r, s1, ter = pool.random_batch()
+        agent.train(s0, acts, r, s1, ter)
+
 
 
 if __name__ == '__main__':
