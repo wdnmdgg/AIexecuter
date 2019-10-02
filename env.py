@@ -76,20 +76,20 @@ class Env:
     def _link(self):
         while self.trader.is_connected() and self.thread_alive:
             if self.isBuy:
-                arg = shift.OrderBookType.GLOBAL_ASK
+                self.arg = shift.OrderBookType.GLOBAL_ASK
             else:
-                arg = shift.OrderBookType.GLOBAL_BID
-            orders = self.trader.get_order_book_with_destination(self.symbol, arg)
+                self.arg = shift.OrderBookType.GLOBAL_BID
+            orders = self.trader.get_order_book_with_destination(self.symbol, self.arg)
             if self.order:
-                last_submitted_order = self.trader.get_executed_orders(self.order.id)
+                self.last_submitted_order = self.trader.get_executed_orders(self.order.id)
             else:
-                last_submitted_order = np.nan
-            self.mutex.acquire()
+                self.last_submitted_order = np.nan
+            #self.mutex.acquire()
             # print(88)
             self.ordertable.insertData(orders)
-            self.executedtable.insertData(last_submitted_order)
+            self.executedtable.insertData(self.last_submitted_order)
             # print(tmp)
-            self.mutex.release()
+            #self.mutex.release()
 
             time.sleep(self.timeInterval)
         print('Data Thread stopped.')
@@ -116,10 +116,10 @@ class Env:
 
     def step(self, action):# action is shares we want to execute (or level of the ratio of the remained shares)
         #self.base_price = self.getClosePrice(action)
-        orderType = shift.Order.MARKET_BUY if self.isBuy else shift.Order.MARKET_SELL
+        orderType = shift.Order.Type.MARKET_BUY if self.isBuy else shift.Order.Type.MARKET_SELL
         #signBuy = 1 if self.isBuy else -1
         if self.remained_steps>0:
-            shares_to_be_executed = np.floor(self.action_level[int(action)]*self.remained_share/100)
+            shares_to_be_executed = int(np.floor(self.action_level[int(action)]*self.remained_share/100))
             self.order = shift.Order(orderType,self.symbol,shares_to_be_executed) # action should be size (1 size = 100 shares)
         else:
             self.order = shift.Order(orderType,self.symbol,self.remained_share)
@@ -227,9 +227,9 @@ class Env:
     #             state_dict[f]=state_dict[f][1:]
 
     def getClosePriceAll(self, volumns:"maximum amount of close prices")->list:
-        self.mutex.acquire()
+        #self.mutex.acquire()
         tabData = self.ordertable.getData()
-        self.mutex.release()
+        #self.mutex.release()
         share_sum = 0
         price_sum = 0
         res = []
@@ -253,8 +253,7 @@ except shift.ConnectionTimeoutError as e:
     print(e)
 env_test = Env(trader=trader,symbol='AAPL',commission=0,action_space=11)
 env_test.set_objective(share=10000, time_total=60,time_steps=10, objPrice=100,close_price_volumn=10)
-print(env_test.step(3))
-
+env_test.step(3)
 
 
 
