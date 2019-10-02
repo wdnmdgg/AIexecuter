@@ -35,16 +35,20 @@ class Env:
     def __init__(self,
                  trader,
                  symbol,
-                 commission):
+                 commission,
+                 action_space):
         """
         :param trader:
         :param symbol:
         :param commission:
+        action_space: int: amount of actions we can have e.g. 5
         """
 
         self.symbol = symbol
         self.trader = trader
         self.commission = commission
+        self.action_space = action_space
+        self.action_level = np.linspace(0,1,self.action_space)
 
         self.timeInterval = None
         self.nTimeStep = None
@@ -106,12 +110,13 @@ class Env:
         self.thread_alive = True
         self.dataThread.start()
 
-    def step(self, action):# action is shares we want to execute
+    def step(self, action):# action is shares we want to execute (or level of the ratio of the remained shares)
         #self.base_price = self.getClosePrice(action)
         orderType = shift.Order.MARKET_BUY if self.isBuy else shift.Order.MARKET_SELL
         #signBuy = 1 if self.isBuy else -1
         if self.remained_steps>0:
-            self.order = shift.Order(orderType,self.symbol,action) # action should be size (1 size = 100 shares)
+            shares_to_be_executed = np.floor(self.action_level[action]*self.remained_share/100)
+            self.order = shift.Order(orderType,self.symbol,shares_to_be_executed) # action should be size (1 size = 100 shares)
         else:
             self.order = shift.Order(orderType,self.symbol,self.remained_share)
         self.trader.submit_order(self.order)    #self.trader.submitOrder(order)
