@@ -5,6 +5,8 @@ from threading import Thread, Lock
 import numpy as np
 import copy
 
+
+
 class CirList:
     def __init__(self, length):
         self.size = length
@@ -72,12 +74,12 @@ class Env:
 
 
     def _link(self):
-        while self.trader.isConnected() and self.thread_alive:
+        while self.trader.is_connected() and self.thread_alive:
             if self.isBuy:
                 arg = shift.OrderBookType.GLOBAL_ASK
             else:
                 arg = shift.OrderBookType.GLOBAL_BID
-            orders = self.trader.getOrderBookWithDestination(self.symbol, arg)
+            orders = self.trader.get_order_book_with_destination(self.symbol, arg)
             if self.order:
                 last_submitted_order = self.trader.get_executed_orders(self.order.id)
             else:
@@ -122,6 +124,7 @@ class Env:
         else:
             self.order = shift.Order(orderType,self.symbol,self.remained_share)
         self.trader.submit_order(self.order)    #self.trader.submitOrder(order)
+        print(f"order.id:{self.order.id}")
         """rest for a period of time"""
         if self.remained_steps > 0:
             time.sleep(self.timeInterval)
@@ -238,6 +241,19 @@ class Env:
                 if share_sum>=volumns:
                     return res
         return res
+
+
+trader = shift.Trader("test001")
+try:
+    trader.connect("initiator.cfg", "password")
+    trader.sub_all_order_book()
+except shift.IncorrectPasswordError as e:
+    print(e)
+except shift.ConnectionTimeoutError as e:
+    print(e)
+env_test = Env(trader=trader,symbol='AAPL',commission=0,action_space=11)
+env_test.set_objective(share=10000, time_total=60,time_steps=10, objPrice=100,close_price_volumn=10)
+print(env_test.step(3))
 
 
 
