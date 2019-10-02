@@ -15,12 +15,13 @@ trader = shift.Trader("username")
 symbol = None
 commission = 0
 sess = tf.Session()
-execute_time = 3600 #total execution time (seconds)
-exe_times = 120 #steps
+execute_time = 3600     # total execution time (seconds)
+exe_times = 120         # steps
 exe_interval = execute_time / exe_times
 action_space = 11
-exe_shares = 100*10 #shares
-exe_price = 100  #dollar
+exe_shares = 100*10     # shares
+exe_price = 100         # dollar
+episode_list = []       # to be continued
 
 
 def main():
@@ -61,7 +62,6 @@ def main():
             ob = env.step(act)
         s0, acts, r, s1, ter = pool.random_batch()
         agent.train(s0, acts, r, s1, ter)
-
 
 
 if __name__ == '__main__':

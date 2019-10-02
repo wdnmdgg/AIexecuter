@@ -48,8 +48,8 @@ class LSTMAgent:
                                       shape=[None, 1])
         self.terminal = tf.placeholder(dtype=tf.float32,
                                        shape=[None, 1])
-        self.episode_rewards = []
-        self.discounted_episode_rewards = []
+        # self.episode_rewards = []
+        # self.discounted_episode_rewards = []
 
         # Whole structure setup
         """
