@@ -118,9 +118,12 @@ class Env:
         #self.base_price = self.getClosePrice(action)
         orderType = shift.Order.Type.MARKET_BUY if self.isBuy else shift.Order.Type.MARKET_SELL
         #signBuy = 1 if self.isBuy else -1
+        if self.action_level[int(action)] * self.remained_share<100:
+            sizes_to_be_executed = 1
+        else:
+            sizes_to_be_executed = int(np.floor(self.action_level[int(action)] * self.remained_share / 100))
         if self.remained_steps>0:
-            shares_to_be_executed = int(np.floor(self.action_level[int(action)]*self.remained_share/100))
-            self.order = shift.Order(orderType,self.symbol,shares_to_be_executed) # action should be size (1 size = 100 shares)
+            self.order = shift.Order(orderType,self.symbol,sizes_to_be_executed) # action should be size (1 size = 100 shares)
         else:
             self.order = shift.Order(orderType,self.symbol,self.remained_share)
         self.trader.submit_order(self.order)    #self.trader.submitOrder(order)
@@ -228,7 +231,7 @@ class Env:
     #         if len(state_dict[f])==limit:
     #             state_dict[f]=state_dict[f][1:]
 
-    def getClosePriceAll(self, volumns:int)->List[float]:
+    def getClosePriceAll(self, volumns:int):
         #self.mutex.acquire()
         tabData = self.ordertable.getData()
         #self.mutex.release()
