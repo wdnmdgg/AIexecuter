@@ -23,7 +23,7 @@ class CirList:
         tail = self._table[0:self.idx]
         head = self._table[self.idx:]
         ret = head+tail
-        return copy.deepcopy(ret)
+        return ret
 
     def isFull(self):
         return self._counter >= self.size
@@ -144,6 +144,7 @@ class Env:
             done = 0
         close_price, exec_size =self.getClosePrice(self.order.id)
         exec_share = exec_size*100
+        self.remained_share -= exec_share
         if self.isBuy:
             reward = (exec_share * (close_price - self.objPrice)) + self.commission
         else:
@@ -161,7 +162,8 @@ class Env:
         add_price = 0
         executed_size = 0
         for order in last_submitted_order:
-            add_price+=order.price*order.executed_size
+            add_price+=order.executed_price*order.executed_size
+            print(f'add_price: {add_price}')
             executed_size+=order.executed_size
         close_price = add_price/executed_size
         return close_price, executed_size  #self.trader.getClosePrice(self.symbol,self.isBuy,abs(share))
@@ -226,7 +228,7 @@ class Env:
     #         if len(state_dict[f])==limit:
     #             state_dict[f]=state_dict[f][1:]
 
-    def getClosePriceAll(self, volumns:"maximum amount of close prices")->list:
+    def getClosePriceAll(self, volumns:int)->List[float]:
         #self.mutex.acquire()
         tabData = self.ordertable.getData()
         #self.mutex.release()
@@ -240,20 +242,24 @@ class Env:
                 res.append(price_sum/share_sum)
                 if share_sum>=volumns:
                     return res
+        if len(res)<volumns:
+            res+=[0]*(volumns-len(res))
         return res
 
+#if __name__ == "__main__":
 
-trader = shift.Trader("test001")
-try:
-    trader.connect("initiator.cfg", "password")
-    trader.sub_all_order_book()
-except shift.IncorrectPasswordError as e:
-    print(e)
-except shift.ConnectionTimeoutError as e:
-    print(e)
-env_test = Env(trader=trader,symbol='AAPL',commission=0,action_space=11)
-env_test.set_objective(share=10000, time_total=60,time_steps=10, objPrice=100,close_price_volumn=10)
-env_test.step(3)
+# trader = shift.Trader("test001")
+# try:
+#     trader.connect("initiator.cfg", "password")
+#     trader.sub_all_order_book()
+# except shift.IncorrectPasswordError as e:
+#     print(e)
+# except shift.ConnectionTimeoutError as e:
+#     print(e)
+# env_test = Env(trader=trader,symbol='AAPL',commission=0,action_space=11)
+# env_test.set_objective(share=10000, time_total=60,time_steps=10, objPrice=100,close_price_volumn=10)
+# env_test.reset()
+    # env_test.step(3)
 
 
 
