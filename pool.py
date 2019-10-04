@@ -53,6 +53,6 @@ class SimpleReplayPool:
 
 # a = SimpleReplayPool(100, 10)
 # for i in range(112):
-#     a.add_sample([i], [1-i/2, 2*i], 7, [2, 3, 4], False)
+#     a.add_sample([i], [1-i/2, 2*i], 7, [2, 3, 4], 1)
 #
-# print(a.random_batch(20), a.current_size())
+# print(a.random_batch(1), a.current_size())

@@ -73,7 +73,7 @@ for i in range(EPISODES):
     ob = env.step(act)
     terminal = ob['isdone']
     print(f'observation is {ob}\nremained shares: {env.remained_share}\n')
-    while terminal==0:
+    while True:
         agent.save_buffer([ob['reward'], ob['states'], ob['isdone']],
                           False)
         pool.add_sample(agent.tmp_buffer[0],
@@ -81,14 +81,15 @@ for i in range(EPISODES):
                         agent.tmp_buffer[2],
                         agent.tmp_buffer[3],
                         agent.tmp_buffer[4])
+        if terminal == 1:
+            break
         act = agent.get_action(ob['states'])
         print(act)
         ob = env.step(act)
         terminal = ob['isdone']
         print(f'observation is {ob}\nremained shares: {env.remained_share}\n')
-    if i >5:
-        s0, acts, r, s1, ter = pool.random_batch(1)
-        agent.train(s0, acts, r, s1, ter)
+    s0, acts, r, s1, ter = pool.random_batch(1)
+    agent.train(s0, acts, r, s1, ter)
 
 
 # if __name__ == '__main__':
