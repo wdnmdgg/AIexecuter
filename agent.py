@@ -23,7 +23,7 @@ class LSTMAgent:
         # Env setup
         self.sess = sess_
         # self.task_info = task_info
-        # '''
+        # '''random_batch() missing 1 required positional argument: 'batch_size'
         # task_info:  1. 'market_price0'
         #             2. 'limit_time'
         #             3. 'target_size'

@@ -127,7 +127,7 @@ class Env:
         else:
             self.order = shift.Order(orderType,self.symbol,self.remained_share)
         self.trader.submit_order(self.order)    #self.trader.submitOrder(order)
-        print(f"order.id:{self.order.id}")
+        print(f"order id:{self.order.id}")
         """rest for a period of time"""
         if self.remained_steps > 0:
             time.sleep(self.timeInterval)
@@ -140,14 +140,13 @@ class Env:
         # exec_share = tmp_share - self.remained_share
         # print(f"executed shares: {exec_share}")
         self.remained_steps -= 1
-
+        close_price, exec_size =self.getClosePrice(self.order.id)
+        exec_share = exec_size*100
+        self.remained_share -= exec_share
         if (int(self.remained_share)==0) or self.remained_steps<0:
             done = 1
         else:
             done = 0
-        close_price, exec_size =self.getClosePrice(self.order.id)
-        exec_share = exec_size*100
-        self.remained_share -= exec_share
         if self.isBuy:
             reward = (exec_share * (close_price - self.objPrice)) + self.commission
         else:
@@ -157,7 +156,7 @@ class Env:
         next_obs['reward'] = reward
         next_obs['isdone'] = done
         #self.add_features(self.record,next_obs,5)
-        """reward, remained_time, remained_share, order_book, isdone"""
+        """close prices, remained_time, remained_share, reward, isdone"""
         return next_obs
 
     def getClosePrice(self,id_):
@@ -166,8 +165,9 @@ class Env:
         executed_size = 0
         for order in last_submitted_order:
             add_price+=order.executed_price*order.executed_size
-            print(f'add_price: {add_price}')
+            #print(f'add_price: {add_price}')
             executed_size+=order.executed_size
+        print(f'sum of executes size of last order: {add_price}')
         close_price = add_price/executed_size
         return close_price, executed_size  #self.trader.getClosePrice(self.symbol,self.isBuy,abs(share))
 

@@ -24,8 +24,8 @@ except shift.ConnectionTimeoutError as e:
 symbol = "AAPL"
 commission = 0
 sess = tf.Session()
-execute_time = 3600     # total execution time (seconds)
-exe_times = 120         # steps
+execute_time = 300     # total execution time (seconds)
+exe_times = 150        # steps
 exe_interval = execute_time / exe_times
 action_space = 11
 exe_shares = 100*10     # shares
@@ -33,46 +33,63 @@ exe_price = 100         # dollar
 episode_list = []       # to be continued
 
 
-def main():
-    env = Env(trader=trader,
-              symbol=symbol,
-              commission=commission,
-              action_space=action_space)
-    agent = LSTMAgent(sess_=sess,
-                      observations_dim=101,
-                      action_space=action_space,
-                      batch_size=5,
-                      Q_function=Qf.ann,
-                      optimizer=tf.train.AdamOptimizer,
-                      GAMMA=GAMMA,
-                      EPSILON=EPSILON,
-                      learning_rate=0.001)
-    pool = SimpleReplayPool(max_pool_size=1000,
-                            pop_size=100)
+#def main():
+env = Env(trader=trader,
+          symbol=symbol,
+          commission=commission,
+          action_space=action_space)
+agent = LSTMAgent(sess_=sess,
+                  observations_dim=12,
+                  action_space=action_space,
+                  batch_size=5,
+                  Q_function=Qf.ann,
+                  optimizer=tf.train.AdamOptimizer,
+                  GAMMA=GAMMA,
+                  EPSILON=EPSILON,
+                  learning_rate=0.001)
+pool = SimpleReplayPool(max_pool_size=1000,
+                        pop_size=100)
 
-    for i in range(EPISODES):
-        # Deal with the initialization for each episode
+for i in range(EPISODES):
+    # Deal with the initialization for each episode
+    print(f'The number {i} episode \n\n')
+    if i//2 == 1:
+        env.set_objective(share=-exe_shares,
+                          time_total=execute_time,
+                          time_steps=exe_times,
+                          objPrice=exe_price,
+                          close_price_volumn=10)
+        print(f'This time sell {exe_shares} shares\n\n')
+    else:
         env.set_objective(share=exe_shares,
                           time_total=execute_time,
                           time_steps=exe_times,
                           objPrice=exe_price,
-                          close_price_volumn=99)
-        ob = env.reset()
+                          close_price_volumn=10)
+        print(f'This time buy {exe_shares} shares\n\n')
+    ob = env.reset()
+    act = agent.get_action(ob['states'])
+    print(act)
+    ob = env.step(act)
+    terminal = ob['isdone']
+    print(f'observation is {ob}\nremained shares: {env.remained_share}\n')
+    while terminal==0:
+        agent.save_buffer([ob['reward'], ob['states'], ob['isdone']],
+                          False)
+        pool.add_sample(agent.tmp_buffer[0],
+                        agent.tmp_buffer[1],
+                        agent.tmp_buffer[2],
+                        agent.tmp_buffer[3],
+                        agent.tmp_buffer[4])
         act = agent.get_action(ob['states'])
+        print(act)
         ob = env.step(act)
-        for j in range(1, exe_times):
-            agent.save_buffer([ob['reward'], ob['states'], ob['isdone']],
-                              False)
-            pool.add_sample(agent.tmp_buffer[0],
-                            agent.tmp_buffer[1],
-                            agent.tmp_buffer[2],
-                            agent.tmp_buffer[3],
-                            agent.tmp_buffer[4])
-            act = agent.get_action(ob['states'])
-            ob = env.step(act)
-        s0, acts, r, s1, ter = pool.random_batch()
-        agent.train(s0, acts, r, s1, ter)
+        terminal = ob['isdone']
+        print(f'observation is {ob}\nremained shares: {env.remained_share}\n')
 
+    s0, acts, r, s1, ter = pool.random_batch(1)
+    agent.train(s0, acts, r, s1, ter)
+    env.kill_thread()
 
-if __name__ == '__main__':
-    main()
+# if __name__ == '__main__':
+#     #main()
