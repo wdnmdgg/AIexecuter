@@ -31,7 +31,7 @@ action_space = 11
 exe_shares = 100*10     # shares
 exe_price = 100         # dollar
 episode_list = []       # to be continued
-
+batch_size = 5
 
 #def main():
 env = Env(trader=trader,
@@ -40,8 +40,9 @@ env = Env(trader=trader,
           action_space=action_space)
 agent = LSTMAgent(sess_=sess,
                   observations_dim=12,
+
                   action_space=action_space,
-                  batch_size=5,
+                  batch_size=batch_size,
                   Q_function=Qf.ann,
                   optimizer=tf.train.AdamOptimizer,
                   GAMMA=GAMMA,
@@ -53,7 +54,7 @@ pool = SimpleReplayPool(max_pool_size=1000,
 for i in range(EPISODES):
     # Deal with the initialization for each episode
     print(f'The number {i} episode \n\n')
-    if i//2 == 1:
+    if i%2 == 1:
         env.set_objective(share=-exe_shares,
                           time_total=execute_time,
                           time_steps=exe_times,
@@ -74,6 +75,7 @@ for i in range(EPISODES):
     terminal = ob['isdone']
     print(f'observation is {ob}\nremained shares: {env.remained_share}\n')
     while True:
+        print('='*30)
         agent.save_buffer([ob['reward'], ob['states'], ob['isdone']],
                           False)
         pool.add_sample(agent.tmp_buffer[0],
@@ -88,8 +90,9 @@ for i in range(EPISODES):
         ob = env.step(act)
         terminal = ob['isdone']
         print(f'observation is {ob}\nremained shares: {env.remained_share}\n')
-    s0, acts, r, s1, ter = pool.random_batch(1)
-    agent.train(s0, acts, r, s1, ter)
+    if batch_size < pool.size:
+        s0, acts, r, s1, ter = pool.random_batch(batch_size)
+        agent.train(s0, acts, r, s1, ter)
 
 
 # if __name__ == '__main__':

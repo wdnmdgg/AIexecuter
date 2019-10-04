@@ -71,6 +71,11 @@ class Env:
         self.executedtable = CirList(length=10)
         self.mutex = Lock()
         self.thread_alive = True
+        print('Waiting for connection', end='')
+        for _ in range(5):
+            time.sleep(1)
+            print('.', end='')
+        print()
         self.dataThread.start()
 
     def _link(self):
@@ -79,17 +84,17 @@ class Env:
             self.arg2 = shift.OrderBookType.GLOBAL_BID
             orders1 = self.trader.get_order_book_with_destination(self.symbol, self.arg1)
             orders2 = self.trader.get_order_book_with_destination(self.symbol, self.arg2)
-            if self.order:
-                self.last_submitted_order = self.trader.get_executed_orders(self.order.id)
-            else:
-                self.last_submitted_order = np.nan
-            #self.mutex.acquire()
+            # if self.order:
+            #     self.last_submitted_order = self.trader.get_executed_orders(self.order.id)
+            # else:
+            #     self.last_submitted_order = np.nan
+            self.mutex.acquire()
             # print(88)
             self.ordertable.insertData((orders1, orders2))
-            self.executedtable.insertData(self.last_submitted_order)
+            # self.executedtable.insertData(self.last_submitted_order)
             # print(tmp)
-            #self.mutex.release()
-
+            self.mutex.release()
+            print(self.ordertable.getData()[-1][0].price)
             time.sleep(self.timeInterval)
         print('Data Thread stopped.')
 
@@ -145,10 +150,14 @@ class Env:
             done = 1
         else:
             done = 0
-        if self.isBuy:
-            reward = (exec_share * (close_price - self.objPrice)) + self.commission
+        if self.remained_steps == 0 and self.remained_share>0:
+            penalty = -10000000
         else:
-            reward = (exec_share * (-close_price + self.objPrice)) + self.commission
+            penalty = 0
+        if self.isBuy:
+            reward = (exec_share * (close_price - self.objPrice)) + self.commission+penalty
+        else:
+            reward = (exec_share * (-close_price + self.objPrice)) + self.commission+penalty
 
         next_obs = self.get_obs(self.close_price_volumn)
         next_obs['reward'] = reward
@@ -230,13 +239,18 @@ class Env:
     #             state_dict[f]=state_dict[f][1:]
 
     def getClosePriceAll(self, isbuy,volumns:int):
-        #self.mutex.acquire()
+        self.mutex.acquire()
         tabData = self.ordertable.getData()
+        self.mutex.release()
         data = tabData[-1][0] if isbuy else tabData[-1][1]
-        #self.mutex.release()
         share_sum = 0
         price_sum = 0
         res = []
+        #print(data)
+        for order in data:
+            print(
+                "%7.2f\t\t%4d\t%6s\t\t%19s"
+                % (order.price, order.size, order.destination, order.time))
         for order in data:
             for i in range(1,order.size):
                 share_sum+=1
@@ -250,21 +264,23 @@ class Env:
 
 #if __name__ == "__main__":
 
-# trader = shift.Trader("test001")
-# try:
-#     trader.connect("initiator.cfg", "password")
-#     trader.sub_all_order_book()
-# except shift.IncorrectPasswordError as e:
-#     print(e)
-# except shift.ConnectionTimeoutError as e:
-#     print(e)
-# env_test = Env(trader=trader,symbol='AAPL',commission=0,action_space=11)
-# env_test.set_objective(share=10000, time_total=60,time_steps=10, objPrice=100,close_price_volumn=10)
-# env_test.reset()
-    # env_test.step(3)
+trader = shift.Trader("test001")
+try:
+    trader.connect("initiator.cfg", "password")
+    trader.sub_all_order_book()
+except shift.IncorrectPasswordError as e:
+    print(e)
+except shift.ConnectionTimeoutError as e:
+    print(e)
+env_test = Env(trader=trader,symbol='AAPL',commission=0,action_space=11)
+env_test.set_objective(share=10000, time_total=60,time_steps=30, objPrice=100,close_price_volumn=10)
 
-
-
-
+# # env_test.reset()
+# #     env_test.step(3)
+# data = env_test.ordertable.getData()
+# for order in data[-1][0]:
+#     print(
+#         "%7.2f\t\t%4d\t%6s\t\t%19s"
+#         % (order.price, order.size, order.destination, order.time))
 
 

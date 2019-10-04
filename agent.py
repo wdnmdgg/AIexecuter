@@ -153,6 +153,9 @@ class LSTMAgent:
             action = np.random.randint(0, self.actions_space)
             act_ = self.act_preprocessor(action)
             self.save_buffer([raw_obs, act_], True)
+            print('Action:\t{}%'.format(100 * action / (self.actions_space - 1)))
+            end = datetime.now()
+            print('Time cost:\t{}'.format(end - start))
             return action
         else:
             q_list = []
