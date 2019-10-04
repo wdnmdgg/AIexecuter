@@ -136,7 +136,7 @@ class Env:
             self.order = shift.Order(orderType,self.symbol,sizes_to_be_executed) # action should be size (1 size = 100 shares)
         else:
             self.order = shift.Order(orderType,self.symbol,self.remained_share)
-        self.trader.submit_order(self.order)    #self.trader.submitOrder(order)
+        self.trader.submit_order(self.order)    #self.trader.submitOrder(o)rder)
         print(f"order id:{self.order.id}")
         """rest for a period of time"""
         if self.remained_steps > 0:

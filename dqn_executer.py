@@ -27,24 +27,25 @@ sess = tf.Session()
 execute_time = 300     # total execution time (seconds)
 exe_times = 150        # steps
 exe_interval = execute_time / exe_times
-action_space = 11
-exe_shares = 100*10     # shares
-exe_price = 160         # objPrice dollar
+action_space = 51
+exe_shares = 100*100     # shares
+exe_price = 166         # objPrice dollar
 episode_list = []       # to be continued
-batch_size = 5
+batch_size = 10
+num_states = 80
 
 #def main():
 env = Env(trader=trader,
           symbol=symbol,
           commission=commission,
           action_space=action_space,
-          share=-exe_shares,
+          share=exe_shares,
           time_total=execute_time,
           time_steps=exe_times,
           objPrice=exe_price,
-          close_price_volumn=10)
+          close_price_volumn=num_states)
 agent = LSTMAgent(sess_=sess,
-                  observations_dim=12,
+                  observations_dim=num_states+2,
 
                   action_space=action_space,
                   batch_size=batch_size,
@@ -59,19 +60,24 @@ pool = SimpleReplayPool(max_pool_size=1000,
 for i in range(EPISODES):
     # Deal with the initialization for each episode
     print(f'The number {i} episode \n\n')
+
     if i%2 == 1:
+        bp = trader.get_best_price(symbol)
+        exe_price = bp.get_bid_price()
         env.set_objective(share=-exe_shares,
                           time_total=execute_time,
                           time_steps=exe_times,
                           objPrice=exe_price,
-                          close_price_volumn=10)
+                          close_price_volumn=num_states)
         print(f'This time sell {exe_shares} shares\n\n')
     else:
+        bp = trader.get_best_price(symbol)
+        exe_price = bp.get_ask_price()
         env.set_objective(share=exe_shares,
                           time_total=execute_time,
                           time_steps=exe_times,
                           objPrice=exe_price,
-                          close_price_volumn=10)
+                          close_price_volumn=num_states)
         print(f'This time buy {exe_shares} shares\n\n')
     ob = env.reset()
     act = agent.get_action(ob['states'])
