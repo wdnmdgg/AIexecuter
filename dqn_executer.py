@@ -86,10 +86,10 @@ for i in range(EPISODES):
         ob = env.step(act)
         terminal = ob['isdone']
         print(f'observation is {ob}\nremained shares: {env.remained_share}\n')
+    if i >5:
+        s0, acts, r, s1, ter = pool.random_batch(1)
+        agent.train(s0, acts, r, s1, ter)
 
-    s0, acts, r, s1, ter = pool.random_batch(1)
-    agent.train(s0, acts, r, s1, ter)
-    env.kill_thread()
 
 # if __name__ == '__main__':
 #     #main()

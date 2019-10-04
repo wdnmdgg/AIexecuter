@@ -67,26 +67,25 @@ class Env:
         self.close_price_volumn = None
 
         self.dataThread = Thread(target=self._link)
-        self.thread_alive = None
         self.ordertable = CirList(length=10)
         self.executedtable = CirList(length=10)
         self.mutex = Lock()
-
+        self.thread_alive = True
+        self.dataThread.start()
 
     def _link(self):
         while self.trader.is_connected() and self.thread_alive:
-            if self.isBuy:
-                self.arg = shift.OrderBookType.GLOBAL_ASK
-            else:
-                self.arg = shift.OrderBookType.GLOBAL_BID
-            orders = self.trader.get_order_book_with_destination(self.symbol, self.arg)
+            self.arg1 = shift.OrderBookType.GLOBAL_ASK
+            self.arg2 = shift.OrderBookType.GLOBAL_BID
+            orders1 = self.trader.get_order_book_with_destination(self.symbol, self.arg1)
+            orders2 = self.trader.get_order_book_with_destination(self.symbol, self.arg2)
             if self.order:
                 self.last_submitted_order = self.trader.get_executed_orders(self.order.id)
             else:
                 self.last_submitted_order = np.nan
             #self.mutex.acquire()
             # print(88)
-            self.ordertable.insertData(orders)
+            self.ordertable.insertData((orders1, orders2))
             self.executedtable.insertData(self.last_submitted_order)
             # print(tmp)
             #self.mutex.release()
@@ -111,8 +110,7 @@ class Env:
         self.close_price_volumn = close_price_volumn
 
         self.record = collections.defaultdict(list)
-        self.thread_alive = True
-        self.dataThread.start()
+
 
     def step(self, action):# action is shares we want to execute (or level of the ratio of the remained shares)
         #self.base_price = self.getClosePrice(action)
@@ -175,7 +173,7 @@ class Env:
         return self.trader.get_portfolio_item(self.symbol).get_shares()     # self.trader.getPortfolioItem(self.symbol).getShares()
 
     def get_obs(self,close_price_volumn):
-        allcloseprice = self.getClosePriceAll(close_price_volumn)########need modification!!!!!!!#########
+        allcloseprice = self.getClosePriceAll(self.isBuy,close_price_volumn)########need modification!!!!!!!#########
         allcloseprice = np.asarray(allcloseprice)/self.objPrice
         rs_rate = self.remained_share/self.total_share
         rt_rate = self.remained_steps/self.nTimeStep
@@ -231,14 +229,15 @@ class Env:
     #         if len(state_dict[f])==limit:
     #             state_dict[f]=state_dict[f][1:]
 
-    def getClosePriceAll(self, volumns:int):
+    def getClosePriceAll(self, isbuy,volumns:int):
         #self.mutex.acquire()
         tabData = self.ordertable.getData()
+        data = tabData[-1][0] if isbuy else tabData[-1][1]
         #self.mutex.release()
         share_sum = 0
         price_sum = 0
         res = []
-        for order in tabData[-1]:
+        for order in data:
             for i in range(1,order.size):
                 share_sum+=1
                 price_sum+=order.price
