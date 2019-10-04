@@ -28,7 +28,7 @@ execute_time = 300     # total execution time (seconds)
 exe_times = 150        # steps
 exe_interval = execute_time / exe_times
 action_space = 51
-exe_shares = 100*100     # shares
+exe_shares = 100*10     # shares
 exe_price = 166         # objPrice dollar
 episode_list = []       # to be continued
 batch_size = 10
@@ -61,7 +61,7 @@ for i in range(EPISODES):
     # Deal with the initialization for each episode
     print(f'The number {i} episode \n\n')
 
-    if i%2 == 1:
+    if i % 2 == 1:
         bp = trader.get_best_price(symbol)
         exe_price = bp.get_bid_price()
         env.set_objective(share=-exe_shares,
