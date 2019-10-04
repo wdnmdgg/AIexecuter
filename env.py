@@ -38,7 +38,12 @@ class Env:
                  trader,
                  symbol,
                  commission,
-                 action_space):
+                 action_space,
+                 share,
+                 time_total,
+                 time_steps,
+                 objPrice,
+                 close_price_volumn):
         """
         :param trader:
         :param symbol:
@@ -65,6 +70,7 @@ class Env:
         self.time_total = None
         self.order = None
         self.close_price_volumn = None
+        self.set_objective(share,time_total,time_steps,objPrice,close_price_volumn)
 
         self.dataThread = Thread(target=self._link)
         self.ordertable = CirList(length=10)
@@ -94,8 +100,9 @@ class Env:
             # self.executedtable.insertData(self.last_submitted_order)
             # print(tmp)
             self.mutex.release()
-            print(self.ordertable.getData()[-1][0].price)
-            time.sleep(self.timeInterval)
+            #print(self.ordertable.getData()[-1][0].price)
+            #print(self.timeInterval)
+            time.sleep(int(self.timeInterval))
         print('Data Thread stopped.')
 
     def kill_thread(self):
@@ -155,9 +162,9 @@ class Env:
         else:
             penalty = 0
         if self.isBuy:
-            reward = (exec_share * (close_price - self.objPrice)) + self.commission+penalty
+            reward = (exec_share * (-close_price + self.objPrice)) - self.commission + penalty
         else:
-            reward = (exec_share * (-close_price + self.objPrice)) + self.commission+penalty
+            reward = (exec_share * (close_price - self.objPrice)) - self.commission + penalty
 
         next_obs = self.get_obs(self.close_price_volumn)
         next_obs['reward'] = reward
@@ -247,10 +254,10 @@ class Env:
         price_sum = 0
         res = []
         #print(data)
-        for order in data:
-            print(
-                "%7.2f\t\t%4d\t%6s\t\t%19s"
-                % (order.price, order.size, order.destination, order.time))
+        # for order in data:
+        #     print(
+        #         "%7.2f\t\t%4d\t%6s\t\t%19s"
+        #         % (order.price, order.size, order.destination, order.time))
         for order in data:
             for i in range(1,order.size):
                 share_sum+=1
@@ -264,17 +271,18 @@ class Env:
 
 #if __name__ == "__main__":
 
-trader = shift.Trader("test001")
-try:
-    trader.connect("initiator.cfg", "password")
-    trader.sub_all_order_book()
-except shift.IncorrectPasswordError as e:
-    print(e)
-except shift.ConnectionTimeoutError as e:
-    print(e)
-env_test = Env(trader=trader,symbol='AAPL',commission=0,action_space=11)
-env_test.set_objective(share=10000, time_total=60,time_steps=30, objPrice=100,close_price_volumn=10)
-
+# trader = shift.Trader("test001")
+# try:
+#     trader.connect("initiator.cfg", "password")
+#     trader.sub_all_order_book()
+# except shift.IncorrectPasswordError as e:
+#     print(e)
+# except shift.ConnectionTimeoutError as e:
+#     print(e)
+# env_test = Env(trader=trader,symbol='AAPL',commission=0,action_space=11,share=10000, time_total=60,time_steps=30, objPrice=100,close_price_volumn=10)
+#env_test.set_objective(share=10000, time_total=60,time_steps=30, objPrice=100,close_price_volumn=10)
+# while True:
+#     env_test.ordertable
 # # env_test.reset()
 # #     env_test.step(3)
 # data = env_test.ordertable.getData()

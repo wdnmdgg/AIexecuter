@@ -29,7 +29,7 @@ exe_times = 150        # steps
 exe_interval = execute_time / exe_times
 action_space = 11
 exe_shares = 100*10     # shares
-exe_price = 100         # dollar
+exe_price = 160         # objPrice dollar
 episode_list = []       # to be continued
 batch_size = 5
 
@@ -37,7 +37,12 @@ batch_size = 5
 env = Env(trader=trader,
           symbol=symbol,
           commission=commission,
-          action_space=action_space)
+          action_space=action_space,
+          share=-exe_shares,
+          time_total=execute_time,
+          time_steps=exe_times,
+          objPrice=exe_price,
+          close_price_volumn=10)
 agent = LSTMAgent(sess_=sess,
                   observations_dim=12,
 
