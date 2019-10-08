@@ -18,6 +18,8 @@ class LSTMAgent:
                  optimizer,
                  GAMMA,
                  EPSILON,
+                 LOAD=True,
+                 load_file_num=None,
                  learning_rate=0.001):
 
         # Env setup
@@ -30,9 +32,11 @@ class LSTMAgent:
         # '''
         self.GAMMA = GAMMA
         self.EPSILON = EPSILON
+        self.LOAD = LOAD
         self.tmp_buffer = []
         self.Q_function = Q_function
         self.training_times = 0
+        self.lossrc = None
         # self.raw_obs = None
 
         # Initialize actions, observations and rewards
@@ -62,7 +66,12 @@ class LSTMAgent:
         self.loss = tf.losses.mean_squared_error(self.obj, self.q_hat)
         self.min_opt = self.optimizer.minimize(self.loss)
 
-        self.sess.run(tf.global_variables_initializer())
+        self.saver = tf.compat.v1.train.Saver()
+        if LOAD:
+            ckpt = tf.train.get_checkpoint_state(f'./saved_models/{load_file_num}')
+            self.saver.restore(self.sess, ckpt.model_checkpoint_path)
+        else:
+            self.sess.run(tf.global_variables_initializer())
 
     def save_buffer(self, data_list, keepGoing):
         if keepGoing:
@@ -120,14 +129,15 @@ class LSTMAgent:
 
     def train(self, obs_, act_, rwd_, obs_plus1_, terminal_):
         self.training_times += 1
-        optimizer, loss = self.sess.run((self.min_opt, self.loss),
+        optimizer, self.lossrc = self.sess.run((self.min_opt, self.loss),
                                         feed_dict={self.observations: obs_,
                                                    self.actions: act_,
                                                    self.rewards: rwd_,
                                                    self.observations1: obs_plus1_,
                                                    self.terminal: terminal_})
         print('Training times:\t', self.training_times)
-        print('Loss:\t', loss)
+
+        print('Loss:\t', self.lossrc)
 
     # def discount_rewards(self, rewards):
     #     discount_rewards = np.zeros_like(rewards)

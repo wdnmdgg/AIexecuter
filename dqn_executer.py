@@ -1,6 +1,8 @@
 from env import Env
 from agent import LSTMAgent
 from pool import SimpleReplayPool
+import os
+from matplotlib import pyplot as plt
 import shift
 import numpy as np
 import tensorflow as tf
@@ -10,8 +12,20 @@ import time
 
 GAMMA = 0.95
 EPSILON = 0.1
-EPISODES = 1000
+EPISODES = 200
 
+# Process the loading files
+model_list = os.listdir('saved_models')
+trained_model_num = '0'
+if model_list:
+    model_list.remove('checkpoint')
+    for name in model_list:
+        trained_model_num = max(name.split('.')[0], trained_model_num)
+    load = True
+else:
+    load = False
+
+# Trader connection
 trader = shift.Trader("democlient")
 try:
     trader.connect("initiator.cfg", "password")
@@ -33,6 +47,8 @@ exe_price = 166         # objPrice dollar
 episode_list = []       # to be continued
 batch_size = 10
 num_states = 80
+loss_list = []
+
 
 #def main():
 env = Env(trader=trader,
@@ -53,13 +69,15 @@ agent = LSTMAgent(sess_=sess,
                   optimizer=tf.train.AdamOptimizer,
                   GAMMA=GAMMA,
                   EPSILON=EPSILON,
+                  LOAD=load,
+                  load_file_num=trained_model_num,
                   learning_rate=0.001)
 pool = SimpleReplayPool(max_pool_size=1000,
                         pop_size=100)
 
 for i in range(EPISODES):
     # Deal with the initialization for each episode
-    print(f'The number {i} episode \n\n')
+    print(f'The number {i+1} episode \n\n')
 
     if i % 2 == 1:
         bp = trader.get_best_price(symbol)
@@ -104,7 +122,12 @@ for i in range(EPISODES):
     if batch_size < pool.size:
         s0, acts, r, s1, ter = pool.random_batch(batch_size)
         agent.train(s0, acts, r, s1, ter)
+        loss_list.append(agent.lossrc)
+
+plt.plot(loss_list)
+plt.show()
+agent.saver.save(sess, f'./saved_models/{int(trained_model_num)+1}')
 
 
 # if __name__ == '__main__':
-#     #main()
+#     main()

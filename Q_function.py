@@ -56,9 +56,12 @@ def lstm(s, a):
 def ann(s, a):
     x = tf.concat([s, a], axis=1)
     l1 = tf.layers.dense(inputs=x,
+                         units=100,
+                         activation=tf.nn.relu)
+    l2 = tf.layers.dense(inputs=l1,
                          units=40,
                          activation=tf.nn.relu)
-    logits = tf.layers.dense(inputs=l1,
+    logits = tf.layers.dense(inputs=l2,
                              units=1,
                              activation=tf.nn.sigmoid)
     return logits
