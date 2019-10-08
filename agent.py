@@ -18,8 +18,7 @@ class LSTMAgent:
                  optimizer,
                  GAMMA,
                  EPSILON,
-                 LOAD=True,
-                 load_file_num=None,
+                 LOAD,
                  learning_rate=0.001):
 
         # Env setup
@@ -68,7 +67,7 @@ class LSTMAgent:
 
         self.saver = tf.compat.v1.train.Saver()
         if LOAD:
-            ckpt = tf.train.get_checkpoint_state(f'./saved_models/{load_file_num}')
+            ckpt = tf.train.get_checkpoint_state(f'./saved_models/')
             self.saver.restore(self.sess, ckpt.model_checkpoint_path)
         else:
             self.sess.run(tf.global_variables_initializer())

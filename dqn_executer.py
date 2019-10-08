@@ -12,7 +12,7 @@ import time
 
 GAMMA = 0.95
 EPSILON = 0.1
-EPISODES = 200
+EPISODES = 10
 
 # Process the loading files
 model_list = os.listdir('saved_models')
@@ -24,7 +24,6 @@ if model_list:
     load = True
 else:
     load = False
-
 # Trader connection
 trader = shift.Trader("democlient")
 try:
@@ -70,7 +69,6 @@ agent = LSTMAgent(sess_=sess,
                   GAMMA=GAMMA,
                   EPSILON=EPSILON,
                   LOAD=load,
-                  load_file_num=trained_model_num,
                   learning_rate=0.001)
 pool = SimpleReplayPool(max_pool_size=1000,
                         pop_size=100)
