@@ -12,7 +12,7 @@ import time
 
 GAMMA = 0.95
 EPSILON = 0.1
-EPISODES = 10
+EPISODES = 500
 
 # Process the loading files
 model_list = os.listdir('saved_models')
@@ -37,16 +37,17 @@ except shift.ConnectionTimeoutError as e:
 symbol = "AAPL"
 commission = 0
 sess = tf.Session()
-execute_time = 300     # total execution time (seconds)
-exe_times = 150        # steps
+execute_time = 60     # total execution time (seconds)
+exe_times = 30        # steps
 exe_interval = execute_time / exe_times
 action_space = 51
-exe_shares = 100*10     # shares
+exe_shares = 100*30     # shares
 exe_price = 166         # objPrice dollar
 episode_list = []       # to be continued
 batch_size = 10
 num_states = 80
 loss_list = []
+reward_list = []
 
 
 #def main():
@@ -75,8 +76,9 @@ pool = SimpleReplayPool(max_pool_size=1000,
 
 for i in range(EPISODES):
     # Deal with the initialization for each episode
-    print(f'The number {i+1} episode \n\n')
-
+    print("*"*100)
+    print(f'THE {i+1} EPISODE \n\n')
+    sum_rew4epi = 0
     if i % 2 == 1:
         bp = trader.get_best_price(symbol)
         exe_price = bp.get_bid_price()
@@ -85,7 +87,7 @@ for i in range(EPISODES):
                           time_steps=exe_times,
                           objPrice=exe_price,
                           close_price_volumn=num_states)
-        print(f'This time sell {exe_shares} shares\n\n')
+        print(f'SELL {exe_shares} SHARES\n\n')
     else:
         bp = trader.get_best_price(symbol)
         exe_price = bp.get_ask_price()
@@ -94,13 +96,15 @@ for i in range(EPISODES):
                           time_steps=exe_times,
                           objPrice=exe_price,
                           close_price_volumn=num_states)
-        print(f'This time buy {exe_shares} shares\n\n')
+        print(f'BUY {exe_shares} SHARES\n\n')
+    print("="*30)
     ob = env.reset()
     act = agent.get_action(ob['states'])
-    print(act)
+    #print(act)
     ob = env.step(act)
     terminal = ob['isdone']
     print(f'observation is {ob}\nremained shares: {env.remained_share}\n')
+    sum_rew4epi += ob['reward']
     while True:
         print('='*30)
         agent.save_buffer([ob['reward'], ob['states'], ob['isdone']],
@@ -111,19 +115,31 @@ for i in range(EPISODES):
                         agent.tmp_buffer[3],
                         agent.tmp_buffer[4])
         if terminal == 1:
+            print(f"Total Reward For This Episode: {sum_rew4epi}")
+            reward_list.append(sum_rew4epi)
             break
         act = agent.get_action(ob['states'])
-        print(act)
+        #print(act)
         ob = env.step(act)
         terminal = ob['isdone']
         print(f'observation is {ob}\nremained shares: {env.remained_share}\n')
+        sum_rew4epi += ob['reward']
     if batch_size < pool.size:
         s0, acts, r, s1, ter = pool.random_batch(batch_size)
         agent.train(s0, acts, r, s1, ter)
         loss_list.append(agent.lossrc)
 
+plt.subplot(2, 1, 1)
+plt.plot(reward_list)
+plt.title('Reward and Loss')
+plt.ylabel('Reward')
+
+plt.subplot(2, 1, 2)
 plt.plot(loss_list)
+plt.xlabel('Episodes')
+plt.ylabel('Loss')
 plt.show()
+
 agent.saver.save(sess, f'./saved_models/{int(trained_model_num)+1}')
 
 

@@ -128,15 +128,18 @@ class Env:
         #self.base_price = self.getClosePrice(action)
         orderType = shift.Order.Type.MARKET_BUY if self.isBuy else shift.Order.Type.MARKET_SELL
         #signBuy = 1 if self.isBuy else -1
-        if self.action_level[int(action)] * self.remained_share<100:
-            sizes_to_be_executed = 1
-        else:
-            sizes_to_be_executed = int(np.floor(self.action_level[int(action)] * self.remained_share / 100))
+        sizes_to_be_executed = int(np.round(self.action_level[int(action)] * self.remained_share/100))
+        #print(sizes_to_be_executed)
+        # if self.action_level[int(action)] * self.remained_share<100:
+        #     sizes_to_be_executed = 1
+        # else:
+        #     sizes_to_be_executed = int(np.floor(self.action_level[int(action)] * self.remained_share / 100))
         if self.remained_steps>0:
             self.order = shift.Order(orderType,self.symbol,sizes_to_be_executed) # action should be size (1 size = 100 shares)
         else:
             self.order = shift.Order(orderType,self.symbol,self.remained_share)
-        self.trader.submit_order(self.order)    #self.trader.submitOrder(o)rder)
+        if sizes_to_be_executed != 0:
+            self.trader.submit_order(self.order)    #self.trader.submitOrder(order)
         print(f"order id:{self.order.id}")
         """rest for a period of time"""
         if self.remained_steps > 0:
@@ -150,7 +153,11 @@ class Env:
         # exec_share = tmp_share - self.remained_share
         # print(f"executed shares: {exec_share}")
         self.remained_steps -= 1
-        close_price, exec_size =self.getClosePrice(self.order.id)
+        if sizes_to_be_executed == 0:
+            close_price, exec_size, commission= 0, 0, 0
+        else:
+            close_price, exec_size =self.getClosePrice(self.order.id)
+            commission = self.commission
         exec_share = exec_size*100
         self.remained_share -= exec_share
         if (int(self.remained_share)==0) or self.remained_steps<0:
@@ -158,14 +165,14 @@ class Env:
         else:
             done = 0
         if self.remained_steps == 0 and self.remained_share>0:
-            penalty = -10000000
+            penalty = -1000
         else:
             penalty = 0
         if self.isBuy:
-            reward = (exec_share * (-close_price + self.objPrice)) - self.commission + penalty
+            reward = (exec_share * (-close_price + self.objPrice - commission)) + penalty
         else:
-            reward = (exec_share * (close_price - self.objPrice)) - self.commission + penalty
-
+            reward = (exec_share * (close_price - self.objPrice - commission)) + penalty
+        # get the observations
         next_obs = self.get_obs(self.close_price_volumn)
         next_obs['reward'] = reward
         next_obs['isdone'] = done
@@ -181,15 +188,15 @@ class Env:
             add_price+=order.executed_price*order.executed_size
             #print(f'add_price: {add_price}')
             executed_size+=order.executed_size
-        print(f'sum of executes size of last order: {add_price}')
+        print(f'executed size of last order: {executed_size}')
         close_price = add_price/executed_size
         return close_price, executed_size  #self.trader.getClosePrice(self.symbol,self.isBuy,abs(share))
 
     def getCurrentPosition(self):# with sign
         return self.trader.get_portfolio_item(self.symbol).get_shares()     # self.trader.getPortfolioItem(self.symbol).getShares()
 
-    def get_obs(self,close_price_volumn):
-        allcloseprice = self.getClosePriceAll(self.isBuy,close_price_volumn)########need modification!!!!!!!#########
+    def get_obs(self,close_price_volumn): # Do the normalization
+        allcloseprice = self.getClosePriceAll(self.isBuy,close_price_volumn)
         allcloseprice = np.asarray(allcloseprice)/self.objPrice
         rs_rate = self.remained_share/self.total_share
         rt_rate = self.remained_steps/self.nTimeStep
@@ -280,7 +287,8 @@ class Env:
 # except shift.ConnectionTimeoutError as e:
 #     print(e)
 # env_test = Env(trader=trader,symbol='AAPL',commission=0,action_space=11,share=10000, time_total=60,time_steps=30, objPrice=100,close_price_volumn=10)
-#env_test.set_objective(share=10000, time_total=60,time_steps=30, objPrice=100,close_price_volumn=10)
+# env_test.set_objective(share=10000, time_total=60,time_steps=30, objPrice=100,close_price_volumn=10)
+# env_test.step(0)
 # while True:
 #     env_test.ordertable
 # # env_test.reset()
