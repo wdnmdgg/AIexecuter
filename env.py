@@ -129,21 +129,31 @@ class Env:
         orderType = shift.Order.Type.MARKET_BUY if self.isBuy else shift.Order.Type.MARKET_SELL
         #signBuy = 1 if self.isBuy else -1
         sizes_to_be_executed = int(np.round(self.action_level[int(action)] * self.remained_share/100))
+        print(sizes_to_be_executed)
+        if sizes_to_be_executed == 0:
+            if self.remained_steps == 1:
+                self.order = shift.Order(orderType, self.symbol, int(self.remained_share / 100))
+                penalty = -1000
+                print("^" * 10 + "Last Step Executed All" + "^" * 10)
+                self.trader.submit_order(self.order)
+            else:
+                penalty = 0
+        else:
+            if self.remained_steps > 1:
+                self.order = shift.Order(orderType, self.symbol,sizes_to_be_executed)  # action should be size (1 size = 100 shares)
+                penalty = 0
+                self.trader.submit_order(self.order)
+            else:
+                self.order = shift.Order(orderType, self.symbol, int(self.remained_share / 100))
+                penalty = -1000
+                print("^" * 10 + "Last Step Executed All" + "^" * 10)
+                self.trader.submit_order(self.order)
         #print(sizes_to_be_executed)
         # if self.action_level[int(action)] * self.remained_share<100:
         #     sizes_to_be_executed = 1
         # else:
         #     sizes_to_be_executed = int(np.floor(self.action_level[int(action)] * self.remained_share / 100))
         print(f"remained steps: {self.remained_steps}")
-        if self.remained_steps > 1:
-            self.order = shift.Order(orderType,self.symbol,sizes_to_be_executed) # action should be size (1 size = 100 shares)
-            penalty = 0
-        else:
-            self.order = shift.Order(orderType,self.symbol,int(self.remained_share/100))
-            penalty = -1000
-            print("^"*10+"Last Step Executed All"+"^"*10)
-        self.trader.submit_order(self.order)
-            #self.trader.submitOrder(order)
         print(f"order id:{self.order.id}")
         """rest for a period of time"""
         if self.remained_steps > 0:
@@ -156,10 +166,14 @@ class Env:
         # self.remained_share = self.total_share-abs(self.currentPos)
         # exec_share = tmp_share - self.remained_share
         # print(f"executed shares: {exec_share}")
-        self.remained_steps -= 1
-        close_price, exec_size = self.getClosePrice(self.order.id)
-        commission = self.commission
+        if sizes_to_be_executed == 0 and self.remained_steps != 1:
+            close_price, exec_size = 0,0
+            commission = 0
+        else:
+            close_price, exec_size = self.getClosePrice(self.order.id)
+            commission = self.commission
         exec_share = exec_size*100
+        self.remained_steps -= 1
         self.remained_share -= exec_share
         if int(self.remained_share) == 0 or self.remained_steps == 0:
             done = 1
@@ -182,15 +196,12 @@ class Env:
         last_submitted_order = self.trader.get_executed_orders(id_)
         add_price = 0
         executed_size = 0
-        try:
-            for order in last_submitted_order:
-                add_price+=order.executed_price*order.executed_size
-                #print(f'add_price: {add_price}')
-                executed_size+=order.executed_size
-            print(f'executed size of last order: {executed_size}')
-            close_price = add_price/executed_size
-        except:
-            close_price = 0
+        for order in last_submitted_order:
+            add_price+=order.executed_price*order.executed_size
+            #print(f'add_price: {add_price}')
+            executed_size+=order.executed_size
+        print(f'executed size of last order: {executed_size}')
+        close_price = add_price/executed_size
         return close_price, executed_size  #self.trader.getClosePrice(self.symbol,self.isBuy,abs(share))
 
     def getCurrentPosition(self):# with sign
